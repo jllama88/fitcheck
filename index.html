@@ -270,6 +270,10 @@ form.fields label{display:flex;flex-direction:column;gap:5px;font-size:13px;font
   <section id="view-studio" class="view">
     <div class="studio">
       <aside class="panel controls">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span class="field-label">Dressing</span>
+          <div class="seg" id="modelSeg"></div>
+        </div>
         <div>
           <div class="eyebrow">Fitting room</div>
           <h2 style="font-size:22px;margin-top:4px">What are we dressing for?</h2>
@@ -479,7 +483,7 @@ const CATS = [
   {id:'acc', label:'Accessory', optional:true, none:'No accessory'}
 ];
 const CAT = Object.fromEntries(CATS.map(c => [c.id, c]));
-const TYPES = {outer:['jacket','coat'], top:['tee','shirt','sweater'], bottom:['jeans','trousers','shorts','skirt'], shoes:['sneaker','boot','loafer'], acc:['cap','beanie','bag']};
+const TYPES = {outer:['jacket','coat'], top:['tee','camp','shirt','sweater','cami'], bottom:['jeans','trousers','shorts','skirt'], shoes:['sneaker','boot','loafer'], acc:['cap','beanie','bag','chain','pendant']};
 const VIBES = [{id:'casual',label:'Casual'},{id:'work',label:'Work'},{id:'street',label:'Street'},{id:'date',label:'Date night'},{id:'sport',label:'Active'}];
 const WEATHER = [{id:'cold',label:'Cold',w:3},{id:'mild',label:'Mild',w:2},{id:'hot',label:'Hot',w:1}];
 const COLORS = [
@@ -487,7 +491,7 @@ const COLORS = [
   ['Denim','#4A6FA5'],['Light blue','#A9C4E4'],['Cobalt','#3346F5'],['Sage','#9DB59A'],['Olive','#6B7148'],['Khaki','#C8B48A'],
   ['Camel','#B98B5E'],['Brown','#7A4B2A'],['Rust','#B5532E'],['Burgundy','#6E2333'],['Red','#C83A3A'],['Pink','#E9A5B5'],['Yellow','#E8C547']
 ];
-const WARMTH = {jacket:2, coat:3, tee:1, shirt:2, sweater:3, jeans:2, trousers:2, shorts:1, skirt:1, sneaker:2, boot:3, loafer:2, cap:1, beanie:3, bag:2};
+const WARMTH = {jacket:2, coat:3, tee:1, shirt:2, sweater:3, jeans:2, trousers:2, shorts:1, skirt:1, sneaker:2, boot:3, loafer:2, cap:1, beanie:3, bag:2, camp:1, cami:1, chain:1, pendant:1};
 const STORE_KEY = 'fitcheck.v1';
 
 /* ---------- Garment illustrations (stand-ins for stock / cut-out photos) ---------- */
@@ -506,7 +510,11 @@ const SHAPES = {
   loafer:{p:'M10 60 Q18 47 40 49 Q67 49 87 57 Q94 61 91 70 L10 70 Z', d:'M10 65 H91 M36 51 Q46 58 60 52'},
   cap:{p:'M20 60 Q22 26 52 26 Q80 26 82 60 Z M50 58 L95 58 Q93 67 74 67 L50 64 Z', d:'M52 26 V60 M36 30 Q32 44 34 60'},
   beanie:{p:'M24 66 Q24 24 50 24 Q76 24 76 66 Z M21 64 H79 V80 H21 Z', d:'M30 64 V80 M40 64 V80 M50 64 V80 M60 64 V80 M70 64 V80'},
-  bag:{p:'M20 40 L80 40 L86 90 L14 90 Z', d:'M35 40 Q35 16 50 16 Q65 16 65 40', handle:true}
+  bag:{p:'M20 40 L80 40 L86 90 L14 90 Z', d:'M35 40 Q35 16 50 16 Q65 16 65 40', handle:true},
+  camp:{p:'M30 18 L42 12 L50 30 L58 12 L70 18 L87 33 L77 43 L70 38 L70 88 L30 88 L30 38 L23 43 L13 33 Z', d:'M42 12 L47 24 L50 30 L53 24 L58 12 M50 30 L50 88 M53 44h0 M53 58h0 M53 72h0'},
+  cami:{p:'M34 30 L42 26 L50 44 L58 26 L66 30 L70 52 L66 88 L34 88 L30 52 Z', d:'M42 27 L50 44 L58 27 M42 26 L46 10 M58 26 L54 10'},
+  chain:{line:true, d:'M28 18 Q50 92 72 18'},
+  pendant:{line:true, d:'M28 18 Q50 80 72 18', pendant:[50,60]}
 };
 function hexToRgb(h){ const n = parseInt(h.slice(1),16); return [(n>>16)&255,(n>>8)&255,n&255]; }
 function rgbToHex(r,g,b){ return '#' + [r,g,b].map(v => Math.round(v).toString(16).padStart(2,'0')).join('').toUpperCase(); }
@@ -536,6 +544,9 @@ function nearestColorName(hex){
 function garmentSVG(type, color){
   const s = SHAPES[type] || SHAPES.tee;
   const detail = isDark(color) ? 'rgba(255,255,255,.22)' : 'rgba(0,0,0,.16)';
+  if (s.line){
+    return `<svg class="g" viewBox="0 0 100 100" aria-hidden="true"><path d="${s.d}" fill="none" stroke="var(--garment-line)" stroke-width="5.5" stroke-linecap="round"/><path d="${s.d}" fill="none" stroke="${color}" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="${type === 'chain' ? '3 1.2' : 'none'}"/>${s.pendant ? `<circle cx="${s.pendant[0]}" cy="${s.pendant[1]}" r="7" fill="${color}" stroke="var(--garment-line)" stroke-width="1.4"/>` : ''}</svg>`;
+  }
   if (s.handle){
     return `<svg class="g" viewBox="0 0 100 100" aria-hidden="true"><path d="${s.d}" fill="none" stroke="${color}" stroke-width="5" stroke-linecap="round"/><path d="${s.p}" fill="${color}" stroke="var(--garment-line)" stroke-width="1.4" stroke-linejoin="round"/><path d="M20 52 H82" stroke="${detail}" stroke-width="1.4" fill="none"/></svg>`;
   }
@@ -557,19 +568,35 @@ function logoSVG(){
 }
 
 /* ---------- Avatar: layered SVG figure, garments drawn to the body ---------- */
-const SKINS = ['#F5D6C1','#E9BE9C','#D29C76','#B07752','#87543A','#5A3727'];
+const SKINS = ['#F5D6C1','#E8BF9A','#D9A47F','#C68D66','#A06B4A','#7A4A33','#5A3727'];
 const HAIR_COLORS = ['#1F1A17','#4A3122','#8A5A35','#CDA36B','#A3A3A3','#A8432C'];
-const HAIRS = [{id:'short',label:'Short'},{id:'long',label:'Long'},{id:'bun',label:'Bun'},{id:'buzz',label:'Buzz'}];
+const HAIRS = [{id:'side',label:'Side swept'},{id:'short',label:'Short'},{id:'wavy',label:'Long wavy'},{id:'long',label:'Shoulder'},{id:'bun',label:'Bun'},{id:'buzz',label:'Buzz'}];
 const BUILDS = [{id:'slim',label:'Slim',k:.9},{id:'regular',label:'Regular',k:1},{id:'broad',label:'Broad',k:1.1}];
-const DEFAULT_AVATAR = {skin:SKINS[2], hair:'short', hairColor:HAIR_COLORS[1], build:'regular'};
+// Animated versions of the two people this closet belongs to (from their photo)
+const MODELS = {
+  me:{label:'You', figure:'m', skin:'#E8BF9A', hair:'side', hairColor:'#241A16', hairTip:'', build:'regular', face:'smile', earrings:false, mole:false},
+  partner:{label:'Partner', figure:'f', skin:'#D9A47F', hair:'wavy', hairColor:'#33231A', hairTip:'#8C6143', build:'regular', face:'soft', earrings:true, mole:true}
+};
+const MODEL_IDS = Object.keys(MODELS);
+const DEFAULT_SEL = {
+  me:{outer:null, top:'t9', bottom:'b2', shoes:'s2', acc:'a4'},
+  partner:{outer:null, top:'t10', bottom:'b6', shoes:'s2', acc:'a5'}
+};
+function modelAv(m){ const id = MODELS[m] ? m : studio.model; return {...MODELS[id], ...((db.models || {})[id] || {})}; }
 const mir = d => d.replace(/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g, (m, x, y) => `${+(200 - x).toFixed(2)} ${y}`);
 const pts = a => a.map(p => p.join(',')).join(' ');
 const ARM = [[64,102],[54,168],[48,228]];
 const ARM_SHORT = [[64,102],[59,140]];
+const ARM_F = [[67,102],[57,166],[52,226]];
+const ARM_SHORT_F = [[67,102],[62,138]];
+const TORSO_F = 'M62 97 L88 91 Q100 101 112 91 L138 97 L137 142 Q130 162 127 178 Q134 196 138 216 Q100 222 62 216 Q66 196 73 178 Q70 162 63 142 Z';
+const TORSO_SKIN_F = 'M66 98 Q100 90 134 98 L133 140 Q128 160 124 176 Q132 192 138 208 L62 208 Q68 192 76 176 Q72 160 67 140 Z';
+const CAMI = 'M70 112 Q74 104 80 100 L100 130 L120 100 Q126 104 130 112 L134 142 Q129 162 126 178 Q133 196 137 214 Q100 220 63 214 Q67 196 74 178 Q71 162 66 142 Z';
 const TORSO = 'M57 97 L87 90 Q100 101 113 90 L143 97 L141 150 L135 182 L139 216 Q100 222 61 216 L65 182 L59 150 Z';
 function avatarSVG(sel, o = {}){
   const id = o.id || 'av', pop = o.pop;
-  const av = {...DEFAULT_AVATAR, ...(db.avatar || {})};
+  const av = modelAv(o.model);
+  const fem = av.figure === 'f', arm = fem ? ARM_F : ARM, armS = fem ? ARM_SHORT_F : ARM_SHORT, torsoTop = fem ? TORSO_F : TORSO;
   const k = (BUILDS.find(b => b.id === av.build) || BUILDS[1]).k;
   const get = c => byId(sel[c]);
   const defs = [];
@@ -593,12 +620,13 @@ function avatarSVG(sel, o = {}){
 
   // body
   const skin = av.skin;
-  const body = limbs(ARM, 17, skin, false)
+  const body = limbs(arm, 17, skin, false)
     + pair('M66 204 L99 204 L97 300 L94 402 L75 402 L72 300 Z', skin)
     + shape('M90 62 L110 62 L111 99 L89 99 Z', skin)
-    + shape('M62 98 Q100 88 138 98 L136 150 L131 182 L136 208 L64 208 L69 182 L64 150 Z', skin)
+    + shape(fem ? TORSO_SKIN_F : 'M62 98 Q100 88 138 98 L136 150 L131 182 L136 208 L64 208 L69 182 L64 150 Z', skin)
     + shape('M64 196 L136 196 L136 214 Q118 220 104 234 L96 234 Q82 220 64 214 Z', '#D9D4CC');
-  const hands = `<circle cx="47" cy="240" r="8" fill="${skin}" stroke="${line}"/><circle cx="153" cy="240" r="8" fill="${skin}" stroke="${line}"/>`;
+  const [wx, wy] = arm[arm.length - 1];
+  const hands = `<circle cx="${wx - 1}" cy="${wy + 12}" r="${fem ? 7 : 8}" fill="${skin}" stroke="${line}"/><circle cx="${201 - wx}" cy="${wy + 12}" r="${fem ? 7 : 8}" fill="${skin}" stroke="${line}"/>`;
 
   // shoes
   let shoes = '';
@@ -619,7 +647,7 @@ function avatarSVG(sel, o = {}){
   const b = get('bottom');
   if (b){
     const f = fillOf(b), dc = detailOf(b);
-    if (b.type === 'skirt') bottom = shape('M67 196 L133 196 L149 292 Q100 300 51 292 Z', f) + det('M84 204 L76 294 M100 204 L100 297 M116 204 L124 294', dc) + det('M67 204 L133 204', dc);
+    if (b.type === 'skirt') bottom = shape('M64 196 L136 196 L150 292 Q100 300 50 292 Z', f) + det('M84 204 L76 294 M100 204 L100 297 M116 204 L124 294', dc) + det('M67 204 L133 204', dc);
     else if (b.type === 'shorts') bottom = pair('M64 196 L100 196 L101 232 L99 268 L67 270 L63 216 Z', f) + det('M64 205 L136 205', dc);
     else {
       bottom = pair('M64 196 L100 196 L101 232 L96 402 L72 402 L69 300 L63 216 Z', f) + det('M64 205 L136 205', dc);
@@ -634,9 +662,14 @@ function avatarSVG(sel, o = {}){
   const t = get('top');
   if (t){
     const f = fillOf(t), dc = detailOf(t);
-    if (t.type === 'tee') top = limbs(ARM_SHORT, 27, f, true) + shape(TORSO, f) + det('M87 90 Q100 101 113 90', dc, 2) + detPair('M74 150 Q78 170 76 196', dc);
-    else if (t.type === 'shirt') top = limbs(ARM, 22, f, true) + shape(TORSO, f) + det('M100 99 L100 218', dc) + det('M87 90 L94 106 L100 99 L106 106 L113 90', dc, 1.6) + [122,146,170,194].map(y => `<circle cx="103" cy="${y}" r="1.4" fill="${dc}"/>`).join('') + detPair('M47 220 L52 221', dc, 1.6);
-    else top = limbs(ARM, 23, f, true) + shape(TORSO, f) + det('M87 90 Q100 103 113 90', dc, 3) + det('M62 207 Q100 213 138 207', dc, 1.4) + detPair('M72 154 Q76 176 74 200', dc) + detPair('M45 219 L53 220', dc, 1.6);
+    if (t.type === 'cami') top = shape(CAMI, f) + det('M81 101 L91 72 M119 101 L109 72', f, 2.6)
+      + `<path d="M81 101 L100 129 L119 101" fill="none" stroke="${dc}" stroke-width="3.2" stroke-dasharray="1.6 1.4"/>` + detPair('M74 160 Q78 180 76 200', dc);
+    else if (t.type === 'camp') top = limbs(armS, 28, f, true) + shape(torsoTop, f) + `<path d="M91 92 L100 114 L109 92 Z" fill="${skin}"/>`
+      + det('M87 90 L91 104 L100 116 L109 104 L113 90', dc, 1.6) + det('M100 116 L100 218', dc)
+      + [130,154,178,202].map(y => `<circle cx="103" cy="${y}" r="1.4" fill="${dc}"/>`).join('') + detPair('M74 150 Q78 170 76 196', dc);
+    else if (t.type === 'tee') top = limbs(armS, 27, f, true) + shape(torsoTop, f) + det('M87 90 Q100 101 113 90', dc, 2) + detPair('M74 150 Q78 170 76 196', dc);
+    else if (t.type === 'shirt') top = limbs(arm, 22, f, true) + shape(torsoTop, f) + det('M100 99 L100 218', dc) + det('M87 90 L94 106 L100 99 L106 106 L113 90', dc, 1.6) + [122,146,170,194].map(y => `<circle cx="103" cy="${y}" r="1.4" fill="${dc}"/>`).join('') + detPair('M47 220 L52 221', dc, 1.6);
+    else top = limbs(arm, 23, f, true) + shape(torsoTop, f) + det('M87 90 Q100 103 113 90', dc, 3) + det('M62 207 Q100 213 138 207', dc, 1.4) + detPair('M72 154 Q76 176 74 200', dc) + detPair('M45 219 L53 220', dc, 1.6);
   } else top = shape('M70 100 L86 96 Q100 108 114 96 L130 100 L134 182 L136 210 L64 210 L66 182 Z', '#E6E1D9');
 
   // outerwear
@@ -644,27 +677,46 @@ function avatarSVG(sel, o = {}){
   const ou = get('outer');
   if (ou){
     const f = fillOf(ou), dc = detailOf(ou);
-    if (ou.type === 'coat') outer = limbs(ARM, 26, f, true) + pair('M54 95 L86 86 L95 124 L98 302 Q76 305 55 300 L61 182 L55 150 Z', f) + detPair('M86 86 L91 132 L95 124', dc, 1.6) + [150,185,220].map(y => `<circle cx="91" cy="${y}" r="2" fill="${dc}"/>`).join('') + detPair('M64 240 L84 240', dc);
-    else outer = limbs(ARM, 25, f, true) + pair('M55 96 L86 88 L95 122 L97 230 Q78 232 60 228 L64 182 L57 150 Z', f) + detPair('M86 88 L91 126 L95 122', dc, 1.6) + detPair('M66 196 L82 196', dc) + detPair('M60 222 Q78 226 96 224', dc);
+    if (ou.type === 'coat') outer = limbs(arm, 26, f, true) + pair('M54 95 L86 86 L95 124 L98 302 Q76 305 55 300 L61 182 L55 150 Z', f) + detPair('M86 86 L91 132 L95 124', dc, 1.6) + [150,185,220].map(y => `<circle cx="91" cy="${y}" r="2" fill="${dc}"/>`).join('') + detPair('M64 240 L84 240', dc);
+    else outer = limbs(arm, 25, f, true) + pair('M55 96 L86 88 L95 122 L97 230 Q78 232 60 228 L64 182 L57 150 Z', f) + detPair('M86 88 L91 126 L95 122', dc, 1.6) + detPair('M66 196 L82 196', dc) + detPair('M60 222 Q78 226 96 224', dc);
   }
 
-  // head, face, hair, hats, bag
-  const hc = av.hairColor;
-  const hairBack = av.hair === 'long' ? `<path d="M74 40 Q72 12 100 12 Q128 12 126 40 L131 122 Q100 130 69 122 Z" fill="${hc}" stroke="${line}"/>`
-    : av.hair === 'bun' ? `<circle cx="100" cy="13" r="11" fill="${hc}" stroke="${line}"/>` : '';
-  const head = `<ellipse cx="78" cy="50" rx="4" ry="7" fill="${skin}" stroke="${line}"/><ellipse cx="122" cy="50" rx="4" ry="7" fill="${skin}" stroke="${line}"/>
-    <ellipse cx="100" cy="46" rx="22" ry="26" fill="${skin}" stroke="${line}"/><ellipse cx="100" cy="46" rx="22" ry="26" fill="url(#${id}-face)"/>
-    <ellipse cx="91" cy="49" rx="2.3" ry="2.7" fill="#2A211C"/><ellipse cx="109" cy="49" rx="2.3" ry="2.7" fill="#2A211C"/>`
-    + detPair('M86 43 Q91 40 95 42', hc, 1.8) + det('M100 51 Q98 58 101 59', 'rgba(0,0,0,.2)') + det('M94 65 Q100 69 106 65', 'rgba(120,40,40,.55)', 1.6);
+  // head, face, hair
+  const hc = av.hairColor, hairFill = av.hairTip ? `url(#${id}-hair)` : hc;
+  if (av.hairTip) defs.push(`<linearGradient id="${id}-hair" x1="0" y1="0" x2="0" y2="1"><stop offset=".35" stop-color="${hc}"/><stop offset="1" stop-color="${av.hairTip}"/></linearGradient>`);
+  const hairBack = {
+    long:`<path d="M74 40 Q72 12 100 12 Q128 12 126 40 L131 122 Q100 130 69 122 Z" fill="${hairFill}" stroke="${line}"/>`,
+    wavy:`<path d="M71 42 Q68 10 100 10 Q132 10 129 42 Q136 70 131 96 Q137 118 131 136 L69 136 Q63 118 69 96 Q64 70 71 42 Z" fill="${hairFill}" stroke="${line}"/>`,
+    bun:`<circle cx="100" cy="13" r="11" fill="${hc}" stroke="${line}"/>`
+  }[av.hair] || '';
+  const strandL = 'M79 34 Q68 58 73 84 Q65 108 72 132 Q70 146 78 154 Q82 140 84 122 Q80 104 86 84 Q82 62 86 44 Z';
+  const strands = av.hair === 'wavy' ? `<g transform="translate(100 0) scale(${k} 1) translate(-100 0)">${[strandL, mir(strandL)].map(d => `<path d="${d}" fill="${hairFill}" stroke="${line}"/><path d="${d}" fill="${SH}"/>`).join('')}${detPair('M78 60 Q74 80 79 100 Q73 118 77 138', 'rgba(255,255,255,.12)', 1.2)}</g>` : '';
+  const hx = fem ? 21 : 23.5, ex = 100 - hx + 1;
+  const eye = fem ? 'M86 49 Q91 45 96 49 Q91 52 86 49 Z' : 'M86 49.5 Q91 46 96 49.5 Q91 51.8 86 49.5 Z';
+  const mouth = av.face === 'smile'
+    ? `<path d="M90 62 Q100 73 110 62 Q100 66 90 62 Z" fill="#FFFFFF" stroke="rgba(110,40,40,.65)" stroke-width="1.2" stroke-linejoin="round"/>`
+    : `<path d="M94 64 Q97 62.5 100 63.4 Q103 62.5 106 64 Q100 69 94 64 Z" fill="#C2686F"/>`;
+  const head = `<ellipse cx="${ex}" cy="50" rx="4" ry="7" fill="${skin}" stroke="${line}"/><ellipse cx="${200 - ex}" cy="50" rx="4" ry="7" fill="${skin}" stroke="${line}"/>
+    <ellipse cx="100" cy="46" rx="${hx}" ry="26" fill="${skin}" stroke="${line}"/><ellipse cx="100" cy="46" rx="${hx}" ry="26" fill="url(#${id}-face)"/>
+    <path d="${eye}" fill="#2A211C"/><path d="${mir(eye)}" fill="#2A211C"/>`
+    + (fem ? detPair('M85.5 48.6 Q91 44.2 96.5 48.6', '#2A211C', 1.3) : '')
+    + detPair(fem ? 'M86 42 Q91 38.8 96 41' : 'M85 42 Q91 39.5 96 41.5', hc, fem ? 1.5 : 2.2)
+    + det('M100 51 Q98 58 101 59', 'rgba(0,0,0,.2)') + mouth
+    + `<ellipse cx="88" cy="59" rx="4" ry="2.4" fill="#E0757A" opacity="${av.face === 'smile' ? .18 : .22}"/><ellipse cx="112" cy="59" rx="4" ry="2.4" fill="#E0757A" opacity="${av.face === 'smile' ? .18 : .22}"/>`
+    + (av.mole ? '<circle cx="93.2" cy="68.2" r=".8" fill="#5A3A2E"/>' : '')
+    + (av.earrings ? `<circle cx="${ex}" cy="58.5" r="1.7" fill="#D4AF37"/><circle cx="${200 - ex}" cy="58.5" r="1.7" fill="#D4AF37"/>` : '');
   const hairD = {short:'M77 44 Q76 17 100 16 Q124 17 123 44 Q119 30 105 28 Q92 33 79 39 Z', long:'M77 50 Q75 15 100 15 Q125 15 123 50 Q121 30 101 27 Q83 29 77 50 Z',
-    bun:'M77 44 Q76 18 100 18 Q124 18 123 44 Q114 27 100 27 Q86 27 77 44 Z', buzz:'M78 40 Q78 19 100 19 Q122 19 122 40 Q112 27 100 27 Q88 27 78 40 Z'}[av.hair] || '';
-  const hair = hairD ? `<path d="${hairD}" fill="${hc}" stroke="${line}"/><path d="${hairD}" fill="${SH}"/>` : '';
+    bun:'M77 44 Q76 18 100 18 Q124 18 123 44 Q114 27 100 27 Q86 27 77 44 Z', buzz:'M78 40 Q78 19 100 19 Q122 19 122 40 Q112 27 100 27 Q88 27 78 40 Z',
+    side:'M73 55 Q65 11 100 8 Q137 9 128 53 Q127 37 121 30 Q116 41 101 39 Q88 41 82 35 Q78 43 73 55 Z', wavy:'M77 52 Q73 13 100 12 Q127 13 123 52 Q119 28 99 23 Q83 27 77 52 Z'}[av.hair] || '';
+  const hair = hairD ? `<path d="${hairD}" fill="${hc}" stroke="${line}"/><path d="${hairD}" fill="${SH}"/>` + (av.hair === 'side' ? det('M88 16 Q106 18 118 30', 'rgba(255,255,255,.14)', 1.4) : '') : '';
   let hat = '', bag = '';
   const a = get('acc');
   if (a){
     const f = fillOf(a), dc = detailOf(a);
     if (a.type === 'cap') hat = shape('M76 40 Q76 13 100 13 Q124 13 124 40 Z', f) + shape('M73 40 Q100 33 127 40 Q129 47 122 47 Q100 41 78 47 Q71 47 73 40 Z', f) + det('M100 13 L100 36', dc);
     else if (a.type === 'beanie') hat = shape('M75 44 Q75 7 100 7 Q125 7 125 44 Z', f) + shape('M72 35 Q100 30 128 35 L128 47 Q100 42 72 47 Z', f) + det('M80 34 L80 46 M88 32 L88 44 M96 32 L96 43 M104 32 L104 43 M112 32 L112 44 M120 34 L120 46', dc);
+    else if (a.type === 'chain' || a.type === 'pendant') bag = `<path d="${fem ? 'M90 82 Q100 112 110 82' : 'M89 84 Q100 114 111 84'}" fill="none" stroke="${f}" stroke-width="1.4" stroke-linecap="round" ${a.type === 'chain' ? 'stroke-dasharray="1.6 .6"' : ''}/>`
+      + (a.type === 'pendant' ? `<circle cx="100" cy="${fem ? 111 : 113}" r="3.2" fill="${f}" stroke="rgba(0,0,0,.3)" stroke-width=".6"/>` : '');
     else bag = det('M128 98 L158 204', f, 3) + shape('M144 202 L178 202 L183 254 L139 254 Z', f) + det('M139 216 L183 216', dc);
   }
 
@@ -674,7 +726,7 @@ function avatarSVG(sel, o = {}){
   return `<svg viewBox="0 0 200 440" role="img" aria-label="Avatar wearing ${esc(names)}"><defs>${defs.join('')}</defs>
     <ellipse cx="100" cy="428" rx="50" ry="7" fill="rgba(0,0,0,.12)"/>${hairBack}
     <g transform="translate(100 0) scale(${k} 1) translate(-100 0)">${body}${layer('shoes', shoes)}${layer('bottom', bottom)}${layer('top', top)}${layer('outer', outer)}${hands}${layer('acc', bag)}</g>
-    ${head}${hair}${layer('acc', hat)}</svg>`;
+    ${strands}${head}${hair}${layer('acc', hat)}</svg>`;
 }
 const REGIONS = {acc:7, outer:25, top:40, bottom:65, shoes:93};
 function avatarStage(popCat){
@@ -686,14 +738,16 @@ function avatarStage(popCat){
     return `<div class="wear-chip"><span class="th">${it ? art(it) : ''}</span><span class="wn"><small>${c.label}</small>${it ? esc(it.name) : 'None'}</span>
       <button class="lock" data-action="lock" data-cat="${c.id}" aria-pressed="${locked}" aria-label="${locked ? 'Unlock' : 'Lock'} ${c.label.toLowerCase()}" title="${locked ? 'Locked' : 'Lock this piece'}">${locked ? ICON.lock : ICON.unlock}</button></div>`;
   }).join('');
-  return `<div class="av-stage">${avatarSVG(studio.sel, {id:'studio', pop:popCat})}${regions}</div><div class="wearing">${chips}</div>`;
+  return `<div class="av-stage">${avatarSVG(studio.sel, {id:'studio', pop:popCat, model:studio.model})}${regions}</div><div class="wearing">${chips}</div>`;
 }
 function renderAvEditor(){
-  const av = {...DEFAULT_AVATAR, ...(db.avatar || {})};
+  const av = modelAv(studio.model);
   const sw = (key, list, label) => `<div class="swatches">${list.map(c => `<button type="button" class="sw" style="background:${c}" data-action="avset" data-k="${key}" data-v="${c}" aria-label="${label}" aria-pressed="${av[key] === c}"></button>`).join('')}</div>`;
-  $('avEditor').innerHTML = `<span class="field-label">Skin tone</span>${sw('skin', SKINS, 'Skin tone')}
+  $('avEditor').innerHTML = `<span class="field-label">Figure</span><div class="seg">${[['m','Masc'],['f','Femme']].map(([v,l]) => `<button type="button" data-action="avset" data-k="figure" data-v="${v}" aria-pressed="${av.figure === v}">${l}</button>`).join('')}</div>
+    <span class="field-label">Skin tone</span>${sw('skin', SKINS, 'Skin tone')}
     <span class="field-label">Hair</span><div class="chips">${HAIRS.map(h => `<button type="button" class="chip" data-action="avset" data-k="hair" data-v="${h.id}" aria-pressed="${av.hair === h.id}">${h.label}</button>`).join('')}</div>
     ${sw('hairColor', HAIR_COLORS, 'Hair colour')}
+    <button type="button" class="btn small ghost" data-action="avreset">Reset to photo version</button>
     <span class="field-label">Build</span><div class="seg">${BUILDS.map(b => `<button type="button" data-action="avset" data-k="build" data-v="${b.id}" aria-pressed="${av.build === b.id}">${b.label}</button>`).join('')}</div>`;
 }
 
@@ -712,6 +766,8 @@ const SEED_ITEMS = [
   mk('t6','Rust overshirt','top','shirt','#B5532E','Grit & Co',['casual','street','date'],60,7),
   mk('t7','Sage tee','top','tee','#9DB59A','Basics Lab',['casual','sport'],22,12),
   mk('t8','Cobalt hoodie','top','sweater','#3346F5','Pace',['street','sport','casual'],65,15),
+  mk('t9','Black camp shirt','top','camp','#1E1F24','Hale',['casual','date','street'],48,30),
+  mk('t10','Black lace cami','top','cami','#1A1A1F','Atelier Mori',['date','casual'],42,18),
   mk('b1','Indigo jeans','bottom','jeans','#2E4A7A','Northline',['casual','street','date'],90,88),
   mk('b2','Black jeans','bottom','jeans','#22252B','Northline',['street','date','casual'],90,40),
   mk('b3','Khaki chinos','bottom','trousers','#C8B48A','Hale',['work','casual'],60,26),
@@ -724,12 +780,17 @@ const SEED_ITEMS = [
   mk('s4','Grey runners','shoes','sneaker','#B8BCC4','Pace',['sport','casual'],120,38),
   mk('a1','Black cap','acc','cap','#1C1D21','Pace',['street','sport','casual'],25,20),
   mk('a2','Tan tote','acc','bag','#C9A57A','Atelier Mori',['work','casual','date'],95,33),
-  mk('a3','Grey beanie','acc','beanie','#8C9097','Woolhouse',['casual','street'],20,16)
+  mk('a3','Grey beanie','acc','beanie','#8C9097','Woolhouse',['casual','street'],20,16),
+  mk('a4','Silver chain','acc','chain','#C9CCD2','Lumen',['casual','street','date','work'],60,70),
+  mk('a5','Gold pendant','acc','pendant','#D4AF37','Lumen',['date','casual','work'],75,41)
 ];
 const SEED = {
   items: SEED_ITEMS,
-  sets: ['Work week','Weekend'],
+  seedVersion: 2,
+  sets: ['Date night','Work week','Weekend'],
   looks: [
+    {id:'l4', name:'Sushi night', set:'Date night', vibe:'date', model:'me', sel:{outer:null, top:'t9', bottom:'b2', shoes:'s2', acc:'a4'}},
+    {id:'l5', name:'Sushi night', set:'Date night', vibe:'date', model:'partner', sel:{outer:null, top:'t10', bottom:'b6', shoes:'s2', acc:'a5'}},
     {id:'l1', name:'Monday meeting', set:'Work week', vibe:'work', sel:{outer:'o2', top:'t5', bottom:'b3', shoes:'s3', acc:'a2'}},
     {id:'l2', name:'Casual Friday', set:'Work week', vibe:'casual', sel:{outer:null, top:'t3', bottom:'b1', shoes:'s1', acc:null}},
     {id:'l3', name:'Coffee run', set:'Weekend', vibe:'street', sel:{outer:'o3', top:'t1', bottom:'b2', shoes:'s1', acc:'a1'}}
@@ -742,7 +803,15 @@ function load(){
   catch { return null; }
 }
 let db = load() || JSON.parse(JSON.stringify(SEED));
-if (!db.avatar || typeof db.avatar !== 'object') db.avatar = {...DEFAULT_AVATAR};
+if (!db.models || typeof db.models !== 'object') db.models = {};
+delete db.avatar;
+if ((db.seedVersion || 1) < 2){   // bring earlier saved closets up to date without touching the user's own items
+  const haveItems = new Set(db.items.map(i => i.id)), haveLooks = new Set(db.looks.map(l => l.id));
+  SEED.items.filter(i => ['t9','t10','a4','a5'].includes(i.id) && !haveItems.has(i.id)).forEach(i => db.items.push({...i}));
+  SEED.looks.filter(l => ['l4','l5'].includes(l.id) && !haveLooks.has(l.id)).forEach(l => db.looks.unshift(JSON.parse(JSON.stringify(l))));
+  if (!db.sets.includes('Date night')) db.sets.unshift('Date night');
+  db.seedVersion = 2; save();
+}
 function save(){
   try { localStorage.setItem(STORE_KEY, JSON.stringify(db)); return true; }
   catch { toast('Saved for this visit only. Browser storage is full or blocked.'); return false; }
@@ -751,7 +820,7 @@ const byId = id => db.items.find(i => i.id === id) || null;
 const uid = p => p + Math.random().toString(36).slice(2,8);
 
 const studio = {
-  sel:{outer:'o1', top:'t1', bottom:'b1', shoes:'s1', acc:null},
+  sel:{...DEFAULT_SEL.me}, model:'me', selBy:{},
   locks:{}, vibe:'casual', weather:'mild', ideas:[], view:'avatar'
 };
 function sanitizeSel(){
@@ -868,6 +937,7 @@ function renderIdeas(){
 }
 function renderControls(){
   $('vibeChips').innerHTML = VIBES.map(v => `<button class="chip" data-action="vibe" data-v="${v.id}" aria-pressed="${studio.vibe === v.id}">${v.label}</button>`).join('');
+  $('modelSeg').innerHTML = MODEL_IDS.map(m => `<button type="button" data-action="model" data-v="${m}" aria-pressed="${studio.model === m}">${MODELS[m].label}</button>`).join('');
   $('viewSeg').innerHTML = [['avatar','Avatar'],['rack','Rack']].map(([v,l]) => `<button type="button" data-action="avview" data-v="${v}" aria-pressed="${studio.view === v}">${l}</button>`).join('');
   $('weatherSeg').innerHTML = WEATHER.map(w => `<button data-action="weather" data-w="${w.id}" aria-pressed="${studio.weather === w.id}">${w.label}</button>`).join('');
   const cur = $('lookSet').value;
@@ -928,8 +998,8 @@ function renderLooks(){
         const sc = scoreOutfit(l.sel, l.vibe, 'mild').score;
         const pieces = CATS.map(c => byId(l.sel[c.id])).filter(Boolean);
         return `<article class="look">
-          <div class="look-art av">${avatarSVG(l.sel, {id:'lk-' + l.id})}</div>
-          <div class="look-row"><span class="look-name">${esc(l.name)}</span><span class="tag">${sc} fit</span></div>
+          <div class="look-art av">${avatarSVG(l.sel, {id:'lk-' + l.id, model:MODELS[l.model] ? l.model : 'me'})}</div>
+          <div class="look-row"><span class="look-name">${esc(l.name)} <span class="sample-note">· ${esc((MODELS[l.model] || MODELS.me).label)}</span></span><span class="tag">${sc} fit</span></div>
           <div class="sample-note" style="margin-top:-6px">${pieces.map(p => esc(p.name)).join(', ')}</div>
           <div class="look-row" style="justify-content:flex-start">
             <button class="btn small primary" data-action="wearlook" data-id="${l.id}">Open in studio</button>
@@ -1062,7 +1132,17 @@ document.addEventListener('click', e => {
     case 'lock': studio.locks[cat] = !studio.locks[cat]; renderSlots(); studio.ideas = bestCombos(3); renderIdeas(); break;
     case 'avview': studio.view = el.dataset.v; renderControls(); renderSlots(); break;
     case 'toggleav': { const ed = $('avEditor'); ed.hidden = !ed.hidden; el.setAttribute('aria-expanded', !ed.hidden); el.textContent = ed.hidden ? 'Edit avatar' : 'Done'; if (!ed.hidden) renderAvEditor(); break; }
-    case 'avset': db.avatar = {...DEFAULT_AVATAR, ...db.avatar, [el.dataset.k]: el.dataset.v}; save(); renderAvEditor(); renderSlots(); break;
+    case 'avset': db.models[studio.model] = {...(db.models[studio.model] || {}), [el.dataset.k]: el.dataset.v}; save(); renderAvEditor(); renderSlots(); break;
+    case 'avreset': delete db.models[studio.model]; save(); renderAvEditor(); renderSlots(); toast(`${MODELS[studio.model].label} is back to the photo version.`); break;
+    case 'model': {
+      if (el.dataset.v === studio.model) break;
+      studio.selBy[studio.model] = {...studio.sel};
+      studio.model = el.dataset.v;
+      studio.sel = {...(studio.selBy[studio.model] || DEFAULT_SEL[studio.model])};
+      studio.locks = {}; studio.ideas = [];
+      if (!$('avEditor').hidden) renderAvEditor();
+      renderStudio('all'); break;
+    }
     case 'unlockall': studio.locks = {}; renderSlots(); break;
     case 'vibe': studio.vibe = el.dataset.v; studio.ideas = bestCombos(3); renderControls(); renderScore(); renderIdeas(); break;
     case 'weather': studio.weather = el.dataset.w; studio.ideas = bestCombos(3); renderControls(); renderScore(); renderIdeas(); break;
@@ -1083,7 +1163,7 @@ document.addEventListener('click', e => {
       }
       if (!studio.sel.top || !studio.sel.bottom || !studio.sel.shoes){ toast('A look needs a top, bottom and shoes.'); break; }
       const name = $('lookName').value.trim() || `Look ${db.looks.length + 1}`;
-      db.looks.unshift({id:uid('l'), name, set, vibe:studio.vibe, sel:{...studio.sel}});
+      db.looks.unshift({id:uid('l'), name, set, vibe:studio.vibe, model:studio.model, sel:{...studio.sel}});
       save(); $('lookName').value = ''; $('newSetName').value = ''; renderControls(); $('lookSet').value = set; $('newSetName').hidden = true;
       toast(`Saved "${name}" to ${set}.`, 'View', () => { location.hash = 'looks'; }); break;
     }
@@ -1099,7 +1179,7 @@ document.addEventListener('click', e => {
       const [gone] = db.items.splice(idx, 1); save(); studio.ideas = []; renderCloset();
       toast(`Removed ${gone.name}.`, 'Undo', () => { db.items.splice(idx, 0, gone); save(); renderCloset(); }); break;
     }
-    case 'wearlook': { const l = db.looks.find(x => x.id === el.dataset.id); if (l){ studio.sel = {...l.sel}; studio.vibe = l.vibe || studio.vibe; studio.ideas = []; location.hash = 'studio'; } break; }
+    case 'wearlook': { const l = db.looks.find(x => x.id === el.dataset.id); if (l){ studio.selBy[studio.model] = {...studio.sel}; studio.model = MODELS[l.model] ? l.model : 'me'; studio.sel = {...l.sel}; studio.vibe = l.vibe || studio.vibe; studio.ideas = []; location.hash = 'studio'; } break; }
     case 'dellook': {
       const idx = db.looks.findIndex(l => l.id === el.dataset.id); if (idx < 0) break;
       const [gone] = db.looks.splice(idx, 1); save(); renderLooks();
